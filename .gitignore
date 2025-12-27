@@ -1,0 +1,24 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE settings
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Local data / outputs
+data/
+results/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
