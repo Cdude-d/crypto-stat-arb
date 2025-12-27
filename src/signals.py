@@ -47,55 +47,63 @@ def rolling_ols_beta(y: pd.Series, x: pd.Series, window: int) -> pd.Series:
     beta = cov / var
     return beta
 
+def compute_vol_scale(spread: pd.Series, window: int, target_spread_vol: float,
+                      min_scale: float, max_scale: float) -> pd.Series:
+    """
+    Volatility scaling based on rolling volatility of spread changes.
+    scale_t = target_vol / rolling_std(diff(spread))
+    """
+    spread_d = spread.diff()
+    vol = spread_d.rolling(window).std(ddof=0)
+
+    scale = target_spread_vol / vol
+    scale = scale.replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    scale = scale.clip(lower=min_scale, upper=max_scale)
+    return scale
+
 def compute_spread_and_z(
     df: pd.DataFrame,
     lookback_beta: int,
     lookback_z: int,
     lookback_coint: int,
     coint_p_threshold: float,
+    lookback_spread_vol: int,
+    target_spread_vol: float,
+    min_scale: float,
+    max_scale: float,
 ) -> pd.DataFrame:
-    """
-    Computes:
-      - log prices (ly, lx)
-      - rolling hedge ratio beta (OLS proxy via rolling cov/var)
-      - spread = ly - beta*lx
-      - z-score of spread
-      - rolling Engle–Granger cointegration p-values and boolean regime flag
-
-    Parameters
-    ----------
-    df : DataFrame with columns ['y','x'] price series aligned by timestamp index
-    lookback_beta : window length for rolling beta estimate
-    lookback_z : window length for spread z-score mean/std
-    lookback_coint : window length for rolling cointegration test
-    coint_p_threshold : p-value threshold used to form is_coint flag
-
-    Returns
-    -------
-    DataFrame with original cols plus: ly, lx, beta, spread, z, coint_p, is_coint
-    """
     out = df.copy()
 
-    # log prices for a more stable spread
+    # log prices
     out["ly"] = np.log(out["y"])
     out["lx"] = np.log(out["x"])
 
-    # rolling hedge ratio beta (fast OLS proxy)
+    # rolling hedge ratio beta
     out["beta"] = rolling_ols_beta(out["ly"], out["lx"], lookback_beta)
 
-    # spread definition (intercept absorbed by rolling mean)
+    # spread
     out["spread"] = out["ly"] - out["beta"] * out["lx"]
 
-    # z-score of spread
+    # z-score
     m = out["spread"].rolling(lookback_z).mean()
     s = out["spread"].rolling(lookback_z).std(ddof=0)
     out["z"] = (out["spread"] - m) / s
 
-    # rolling cointegration p-values (regime detection)
+    # rolling cointegration p-values + regime flag
     out["coint_p"] = rolling_coint_pvalue(out["ly"], out["lx"], lookback_coint)
     out["is_coint"] = out["coint_p"] < coint_p_threshold
 
+    # volatility scaling factor (risk targeting)
+    out["vol_scale"] = compute_vol_scale(
+        out["spread"],
+        window=lookback_spread_vol,
+        target_spread_vol=target_spread_vol,
+        min_scale=min_scale,
+        max_scale=max_scale,
+    )
+
     return out
+
 
 def generate_positions(z: pd.Series, entry_z: float, exit_z: float) -> pd.Series:
     """

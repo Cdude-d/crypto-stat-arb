@@ -6,11 +6,14 @@ def backtest_pairs(
     df: pd.DataFrame,
     pos_spread: pd.Series,
     beta: pd.Series,
+    vol_scale: pd.Series,
     gross_leverage: float,
+    max_gross_leverage: float,
     fee_bps: float,
     slippage_bps: float,
     max_holding_bars: int,
 ) -> pd.DataFrame:
+
     """
     Trading spread:
       pos_spread = +1 => long y, short x * beta
@@ -28,6 +31,8 @@ def backtest_pairs(
 
     out["pos"] = pos_spread.fillna(0.0)
     out["beta"] = beta.ffill().fillna(0.0)
+    out["vol_scale"] = vol_scale.reindex(out.index).ffill().fillna(0.0)
+
 
     # holding-period cap
     # if position held too long, force exit
@@ -55,8 +60,13 @@ def backtest_pairs(
     # we target |w_y| + |w_x| = gross_leverage
     # w_y = pos * a ; w_x = -pos * a * beta
     # choose a so that abs(wy)+abs(wx)=gross
+    # Effective gross exposure scales with spread volatility, capped
+    eff_gross = gross_leverage * out["vol_scale"]
+    eff_gross = eff_gross.clip(lower=0.0, upper=max_gross_leverage)
+
     denom = (1.0 + out["beta"].abs()).replace(0.0, np.nan)
-    a = gross_leverage / denom
+    a = eff_gross / denom
+
     out["w_y"] = out["pos"] * a
     out["w_x"] = -out["pos"] * a * out["beta"]
 

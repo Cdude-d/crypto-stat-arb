@@ -26,3 +26,11 @@ class Config:
     # Cointegration regime filter
     lookback_coint: int = 300
     coint_p_threshold: float = 0.05
+
+    # Volatility scaling (risk targeting)
+    lookback_spread_vol: int = 200  # window for spread volatility estimate
+    target_spread_vol: float = 0.0015  # target spread-vol per bar (tune later)
+    max_gross_leverage: float = 2.0  # cap effective gross exposure
+    min_scale: float = 0.0  # allow 0
+    max_scale: float = 3.0  # cap scaling multiplier
+

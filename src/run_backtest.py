@@ -22,6 +22,10 @@ def main():
         cfg.lookback_z,
         cfg.lookback_coint,
         cfg.coint_p_threshold,
+        cfg.lookback_spread_vol,
+        cfg.target_spread_vol,
+        cfg.min_scale,
+        cfg.max_scale,
     )
 
     pos_raw = generate_positions(feat["z"], cfg.entry_z, cfg.exit_z)
@@ -31,7 +35,9 @@ def main():
         df=df,
         pos_spread=pos,
         beta=feat["beta"],
+        vol_scale=feat["vol_scale"],
         gross_leverage=cfg.gross_leverage,
+        max_gross_leverage=cfg.max_gross_leverage,
         fee_bps=cfg.fee_bps,
         slippage_bps=cfg.slippage_bps,
         max_holding_bars=cfg.max_holding_bars,
@@ -94,6 +100,19 @@ def main():
     plt.savefig(coint_path, dpi=150)
     plt.close()
     print(f"Saved cointegration p-value plot to: {coint_path}")
+
+    # --- Volatility Scaling plot ---
+    scale_path = RESULTS_DIR / "vol_scale.png"
+    plt.figure(figsize=(10, 5))
+    feat["vol_scale"].plot()
+    plt.title("Volatility Scaling Multiplier (spread risk targeting)")
+    plt.xlabel("Time (UTC)")
+    plt.ylabel("Scale")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(scale_path, dpi=150)
+    plt.close()
+    print(f"Saved vol scale plot to: {scale_path}")
 
 
 if __name__ == "__main__":

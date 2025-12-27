@@ -18,12 +18,16 @@ a naive pairs-trading approach produces risk-adjusted returns in crypto markets.
 - python src/run_backtest.py
 
 ## Results (Baseline)
-The naive implementation produces negative risk-adjusted returns over the tested window.
-This highlights the instability of mean-reversion assumptions in trending crypto regimes.
+- The naive implementation produces negative risk-adjusted returns over the tested window.
+- This highlights the instability of mean-reversion assumptions in trending crypto regimes.
 
-### Regime Filtering Result
-Introducing a rolling Engle–Granger cointegration filter materially improved
+## Regime Filtering Result
+- Introducing a rolling Engle–Granger cointegration filter materially improved
 risk-adjusted performance by preventing trades during non–mean-reverting regimes.
+
+## Volatility-Scaled Position Sizing Results
+- Introducing volatility-scaled position sizing materially reduced drawdowns and stabilized the equity curve by dynamically reducing exposure during high-volatility spread regimes. As expected, risk-adjusted performance (Sharpe) declined relative to the unscaled strategy due to conservative volatility targeting, resulting in lower average exposure.
+- This behavior is intentional: volatility scaling prioritizes robustness and drawdown control over raw returns. The framework enables systematic calibration of risk targets to balance return and stability over longer evaluation horizons.
 
 ## Key Takeaways
 - BTC–ETH correlation does not imply persistent mean reversion
@@ -31,7 +35,6 @@ risk-adjusted performance by preventing trades during non–mean-reverting regim
 - Risk controls prevent large drawdowns, but do not create edge
 
 ## What This Project Demonstrates
-
 - Construction of a market-neutral statistical arbitrage strategy using rolling hedge ratios
 - Practical application of time-series statistics (log-price spreads, z-score normalization)
 - End-to-end backtesting pipeline with transaction cost and slippage modeling
