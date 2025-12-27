@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from config import Config
 from data_loader import load_pair_close
-from signals import compute_spread_and_z, generate_positions
+from signals import compute_spread_and_z, generate_positions, apply_coint_regime_filter
 from backtest import backtest_pairs
 from metrics import summarize
 
@@ -16,8 +16,16 @@ def main():
     cfg = Config()
 
     df = load_pair_close(cfg.exchange_id, cfg.symbol_y, cfg.symbol_x, cfg.timeframe, cfg.limit)
-    feat = compute_spread_and_z(df, cfg.lookback_beta, cfg.lookback_z)
-    pos = generate_positions(feat["z"], cfg.entry_z, cfg.exit_z)
+    feat = compute_spread_and_z(
+        df,
+        cfg.lookback_beta,
+        cfg.lookback_z,
+        cfg.lookback_coint,
+        cfg.coint_p_threshold,
+    )
+
+    pos_raw = generate_positions(feat["z"], cfg.entry_z, cfg.exit_z)
+    pos = apply_coint_regime_filter(pos_raw, feat["coint_p"], cfg.coint_p_threshold)
 
     out = backtest_pairs(
         df=df,
@@ -71,6 +79,21 @@ def main():
 
     print(f"Saved equity curve to: {equity_path}")
     print(f"Saved z-score plot to: {zscore_path}")
+
+    # --- Cointegration p-value plot ---
+    coint_path = RESULTS_DIR / "coint_pvalue.png"
+    plt.figure(figsize=(10, 5))
+    feat["coint_p"].plot()
+    plt.axhline(cfg.coint_p_threshold, linestyle="--", label="p-threshold")
+    plt.title("Rolling Engle–Granger Cointegration p-value")
+    plt.xlabel("Time (UTC)")
+    plt.ylabel("p-value")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(coint_path, dpi=150)
+    plt.close()
+    print(f"Saved cointegration p-value plot to: {coint_path}")
 
 
 if __name__ == "__main__":

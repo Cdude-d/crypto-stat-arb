@@ -22,3 +22,7 @@ class Config:
     # Costs (round-trip approx: 2 * fee + slippage). Tune per venue.
     fee_bps: float = 4.0          # e.g., 4 bps per side total? (adjust)
     slippage_bps: float = 2.0     # assumed slippage per side
+
+    # Cointegration regime filter
+    lookback_coint: int = 300
+    coint_p_threshold: float = 0.05

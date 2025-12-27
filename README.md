@@ -21,6 +21,10 @@ a naive pairs-trading approach produces risk-adjusted returns in crypto markets.
 The naive implementation produces negative risk-adjusted returns over the tested window.
 This highlights the instability of mean-reversion assumptions in trending crypto regimes.
 
+### Regime Filtering Result
+Introducing a rolling Engle–Granger cointegration filter materially improved
+risk-adjusted performance by preventing trades during non–mean-reverting regimes.
+
 ## Key Takeaways
 - BTC–ETH correlation does not imply persistent mean reversion
 - Z-score signals fail during strong directional markets
@@ -36,6 +40,5 @@ This highlights the instability of mean-reversion assumptions in trending crypto
 - Clean, modular research code suitable for extension and iteration
 
 ## Next Steps
-- Rolling cointegration regime filter
 - Volatility-scaled position sizing
 - Funding-rate and execution modeling
